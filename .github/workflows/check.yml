@@ -1,0 +1,24 @@
+name: 检查模组文件
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 确认模组文件都在
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for file in artmo.ini expandmo93.mix libramod.ini librart.ini librasound.ini list.ini rulesmo.ini soundmo.ini
+          do
+            if [ ! -f "$file" ]; then
+              echo "缺少 $file"
+              missing=1
+            fi
+          done
+          exit "$missing"

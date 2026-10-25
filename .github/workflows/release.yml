@@ -1,0 +1,47 @@
+name: 发布模组
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 打包并写出版本说明
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(artmo.ini expandmo93.mix libramod.ini librart.ini librasound.ini list.ini rulesmo.ini soundmo.ini)
+          mkdir dist
+          cp "${files[@]}" dist/
+          (cd dist && zip -r ../MTlibulamod.zip .)
+          version="${GITHUB_REF_NAME#v}"
+          hash="$(sha256sum MTlibulamod.zip | awk '{print $1}')"
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/MTlibulamod.zip"
+          cat > version.json <<EOF
+          {
+            "version": "${version}",
+            "notes": "见本版本的 Release 说明",
+            "url": "${url}",
+            "sha256": "${hash}"
+          }
+          EOF
+
+      - name: 发布到 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" \
+            MTlibulamod.zip \
+            version.json \
+            --title "$GITHUB_REF_NAME" \
+            --notes "模组包 MTlibulamod.zip，版本说明文件 version.json"
